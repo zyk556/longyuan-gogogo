@@ -4,13 +4,13 @@ WORKDIR /app/frontend
 COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm install
 COPY frontend/ .
-RUN npm run build
+RUN npm run build || (echo "前端构建失败" && exit 1)
 
 # ── 第二阶段：运行后端 ──
 FROM python:3.11-slim
 WORKDIR /app
 
-# 安装 Python 依赖
+# 安装依赖
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
