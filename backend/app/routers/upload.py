@@ -44,9 +44,14 @@ async def upload_image(
                 url=f"/uploads/{Path(existing_image.file_path).name}",
                 analysis_id=analysis.id,
             )
-        # 没有分析结果 → 重新调用 AI
+        # 没有分析结果 → 重新保存文件并调用 AI
+        ext = Path(file.filename).suffix or ".jpg"
+        filename = f"{uuid.uuid4().hex}{ext}"
+        file_path = os.path.join(settings.UPLOAD_DIR, filename)
+        with open(file_path, "wb") as f:
+            f.write(content)
+        existing_image.file_path = file_path
         image = existing_image
-        file_path = existing_image.file_path
     else:
         # 新图片 → 保存文件
         ext = Path(file.filename).suffix or ".jpg"
