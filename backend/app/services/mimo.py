@@ -109,7 +109,14 @@ async def recognize_lottery(file_path: str) -> Optional[dict]:
         return None
     logger.info("开始识别图片: %s (key=%s...)", file_path, settings.MIMO_API_KEY[:8])
 
-    image_url = _file_to_base64_url(file_path)
+    try:
+        image_url = _file_to_base64_url(file_path)
+    except FileNotFoundError:
+        logger.error("图片文件不存在: %s", file_path)
+        return None
+    except Exception as e:
+        logger.error("读取图片失败: %s", e)
+        return None
 
     payload = {
         "model": settings.MIMO_MODEL,
