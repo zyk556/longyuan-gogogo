@@ -194,26 +194,11 @@ export default function AnalysisHistory() {
     },
   ]
 
-  // 判断是否需要加分隔线（日期变化时）
-  const getRowClassName = (_: any, index: number) => {
-    if (index === 0) return ''
-    const prevDate = data[index - 1]?.bet_date || ''
-    const currDate = data[index]?.bet_date || ''
-    if (prevDate !== currDate) return 'date-separator'
-    return ''
-  }
-
   return (
     <>
       <style>{`
-        .date-separator td {
-          border-top: 2px solid #f0f0f0 !important;
-        }
-        .date-separator td:first-child {
-          border-top-color: transparent !important;
-        }
-        .date-separator td:nth-child(2) {
-          border-top-color: ${DATE_COLORS[0]} !important;
+        .my-table .ant-table-tbody > tr > td {
+          border-bottom: 1px solid #e8e8e8;
         }
       `}</style>
       <Card title="我的彩票">
@@ -224,7 +209,7 @@ export default function AnalysisHistory() {
           loading={loading}
           pagination={{ pageSize: 20 }}
           size="middle"
-          rowClassName={getRowClassName}
+          className="my-table"
           locale={{ emptyText: <Empty description="暂无记录，去上传彩票吧" /> }}
         />
       </Card>
