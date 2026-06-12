@@ -56,6 +56,11 @@ async def health():
     return {"status": "ok"}
 
 
+@app.head("/api/health")
+async def health_head():
+    return {"status": "ok"}
+
+
 # 前端静态文件（build 后放在 static/ 目录）
 if FRONTEND_DIR.exists():
     app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="assets")
