@@ -119,3 +119,6 @@ export const deleteProfitLoss = (id: string) =>
   api.delete(`/profit-loss/${id}`)
 
 export const getDashboard = () => api.get<Dashboard>('/dashboard')
+
+export const syncMatches = () =>
+  api.post<{ synced: number; message: string }>('/sync')

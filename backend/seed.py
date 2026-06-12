@@ -1,52 +1,69 @@
-"""初始化脚本：插入 2026 世界杯模拟赛程数据"""
+"""初始化脚本：基于真实 CSV 插入 2026 美加墨世界杯赛程"""
 import asyncio
+import csv
+import re
 from datetime import date, time
 
-from sqlalchemy import insert, select
+from sqlalchemy import select
 from app.database import engine, async_session
 from app.models import Base, Match
 
+CSV_PATH = r"f:\悦天禾集团\表格_20260612.csv"
 
-MATCHES_DATA = [
-    # 小组赛第1轮 — 2026年6月11日
-    {"match_date": date(2026, 6, 11), "home_team": "墨西哥", "away_team": "加拿大", "group_name": "A", "stadium": "阿兹特克球场", "kickoff_time": time(12, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 11), "home_team": "德国", "away_team": "日本", "group_name": "E", "stadium": "梅赛德斯-奔驰球场", "kickoff_time": time(15, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 11), "home_team": "西班牙", "away_team": "哥斯达黎加", "group_name": "E", "stadium": "卢赛尔球场", "kickoff_time": time(18, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    # 小组赛第1轮 — 2026年6月12日
-    {"match_date": date(2026, 6, 12), "home_team": "阿根廷", "away_team": "沙特阿拉伯", "group_name": "C", "stadium": "卢赛尔球场", "kickoff_time": time(12, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 12), "home_team": "法国", "away_team": "澳大利亚", "group_name": "D", "stadium": "贾努布球场", "kickoff_time": time(15, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 12), "home_team": "巴西", "away_team": "塞尔维亚", "group_name": "G", "stadium": "974球场", "kickoff_time": time(18, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 12), "home_team": "英格兰", "away_team": "伊朗", "group_name": "B", "stadium": "哈利法国际球场", "kickoff_time": time(21, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    # 小组赛第1轮 — 2026年6月13日
-    {"match_date": date(2026, 6, 13), "home_team": "葡萄牙", "away_team": "加纳", "group_name": "H", "stadium": "教育城球场", "kickoff_time": time(12, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 13), "home_team": "荷兰", "away_team": "塞内加尔", "group_name": "A", "stadium": "阿图玛玛球场", "kickoff_time": time(15, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 13), "home_team": "比利时", "away_team": "加拿大", "group_name": "F", "stadium": "艾哈迈德·本·阿里球场", "kickoff_time": time(18, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 13), "home_team": "克罗地亚", "away_team": "摩洛哥", "group_name": "F", "stadium": "海湾球场", "kickoff_time": time(21, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    # 小组赛第2轮 — 2026年6月14日
-    {"match_date": date(2026, 6, 14), "home_team": "日本", "away_team": "哥斯达黎加", "group_name": "E", "stadium": "艾哈迈德·本·阿里球场", "kickoff_time": time(12, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 14), "home_team": "比利时", "away_team": "摩洛哥", "group_name": "F", "stadium": "阿图玛玛球场", "kickoff_time": time(15, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 14), "home_team": "克罗地亚", "away_team": "加拿大", "group_name": "F", "stadium": "哈利法国际球场", "kickoff_time": time(18, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 14), "home_team": "西班牙", "away_team": "德国", "group_name": "E", "stadium": "海湾球场", "kickoff_time": time(21, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    # 小组赛第2轮 — 2026年6月15日
-    {"match_date": date(2026, 6, 15), "home_team": "喀麦隆", "away_team": "塞尔维亚", "group_name": "G", "stadium": "贾努布球场", "kickoff_time": time(12, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 15), "home_team": "韩国", "away_team": "加纳", "group_name": "H", "stadium": "教育城球场", "kickoff_time": time(15, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 15), "home_team": "巴西", "away_team": "瑞士", "group_name": "G", "stadium": "974球场", "kickoff_time": time(18, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 15), "home_team": "葡萄牙", "away_team": "乌拉圭", "group_name": "H", "stadium": "卢赛尔球场", "kickoff_time": time(21, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    # 小组赛第3轮 — 2026年6月25日
-    {"match_date": date(2026, 6, 25), "home_team": "荷兰", "away_team": "卡塔尔", "group_name": "A", "stadium": "阿图玛玛球场", "kickoff_time": time(15, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 25), "home_team": "厄瓜多尔", "away_team": "塞内加尔", "group_name": "A", "stadium": "哈利法国际球场", "kickoff_time": time(15, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 25), "home_team": "威尔士", "away_team": "英格兰", "group_name": "B", "stadium": "艾哈迈德·本·阿里球场", "kickoff_time": time(19, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 6, 25), "home_team": "伊朗", "away_team": "美国", "group_name": "B", "stadium": "阿图玛玛球场", "kickoff_time": time(19, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    # 淘汰赛模拟
-    {"match_date": date(2026, 7, 3), "home_team": "1A", "away_team": "2B", "group_name": "1/8", "stadium": "哈利法国际球场", "kickoff_time": time(17, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 7, 3), "home_team": "1C", "away_team": "2D", "group_name": "1/8", "stadium": "艾哈迈德·本·阿里球场", "kickoff_time": time(21, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 7, 4), "home_team": "1B", "away_team": "2A", "group_name": "1/8", "stadium": "海湾球场", "kickoff_time": time(17, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 7, 4), "home_team": "1E", "away_team": "2F", "group_name": "1/8", "stadium": "974球场", "kickoff_time": time(21, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 7, 5), "home_team": "1G", "away_team": "2H", "group_name": "1/8", "stadium": "卢赛尔球场", "kickoff_time": time(17, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 7, 5), "home_team": "1F", "away_team": "2E", "group_name": "1/8", "stadium": "教育城球场", "kickoff_time": time(21, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 7, 6), "home_team": "1H", "away_team": "2G", "group_name": "1/8", "stadium": "阿兹特克球场", "kickoff_time": time(17, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-    {"match_date": date(2026, 7, 6), "home_team": "1D", "away_team": "2C", "group_name": "1/8", "stadium": "贾努布球场", "kickoff_time": time(21, 0), "home_score": None, "away_score": None, "status": "scheduled"},
-]
+
+def parse_csv():
+    """解析 CSV，返回 matches 行列表"""
+    matches = []
+    year = 2026
+    current_date = None
+
+    with open(CSV_PATH, "r", encoding="utf-8-sig") as f:
+        reader = csv.reader(f)
+        header = next(reader)  # 日期,星期,对阵双方,小组,开赛时间(北京)
+
+        for row in reader:
+            if len(row) < 5:
+                continue
+            date_raw, weekday, teams, group_raw, time_raw = [c.strip() for c in row[:5]]
+
+            # 解析日期（可能为空表示同上一行）
+            if date_raw:
+                m = re.search(r"(\d+)\s*月\s*(\d+)\s*日", date_raw)
+                if m:
+                    current_date = date(year, int(m.group(1)), int(m.group(2)))
+            if current_date is None:
+                continue
+
+            # 解析时间
+            tm = re.match(r"(\d{1,2}):(\d{2})", time_raw)
+            if tm:
+                kickoff = time(int(tm.group(1)), int(tm.group(2)))
+            else:
+                kickoff = time(12, 0)
+
+            # 解析对阵 "墨西哥 VS 南非"
+            parts = re.split(r"\s*VS\s*", teams, flags=re.IGNORECASE)
+            if len(parts) != 2:
+                continue
+            home_team = parts[0].strip()
+            away_team = parts[1].strip()
+
+            # 解析小组 "A 组"
+            group_name = re.sub(r"\s*组", "", group_raw).strip()
+
+            matches.append({
+                "match_date": current_date,
+                "home_team": home_team,
+                "away_team": away_team,
+                "group_name": group_name,
+                "stadium": "待定",
+                "kickoff_time": kickoff,
+                "home_score": None,
+                "away_score": None,
+                "status": "scheduled",
+            })
+
+    return matches
 
 
 async def seed():
@@ -54,16 +71,16 @@ async def seed():
         await conn.run_sync(Base.metadata.create_all)
 
     async with async_session() as db:
-        # 检查是否已有数据
         result = await db.execute(select(Match).limit(1))
         if result.scalar_one_or_none():
-            print("赛程数据已存在，跳过初始化")
-            return
+            await db.execute(Match.__table__.delete())
+            await db.commit()
 
-        for m in MATCHES_DATA:
+        matches = parse_csv()
+        for m in matches:
             db.add(Match(**m))
         await db.commit()
-        print(f"已插入 {len(MATCHES_DATA)} 条赛程数据")
+        print(f"已插入 {len(matches)} 条 2026 美加墨世界杯赛程")
 
 
 if __name__ == "__main__":

@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.database import engine
 from app.models import Base
-from app.routers import matches, upload, analysis, profit_loss, dashboard
+from app.routers import matches, upload, analysis, profit_loss, dashboard, sync
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -45,6 +45,7 @@ app.include_router(upload.router)
 app.include_router(analysis.router)
 app.include_router(profit_loss.router)
 app.include_router(dashboard.router)
+app.include_router(sync.router)
 
 
 @app.get("/api/health")

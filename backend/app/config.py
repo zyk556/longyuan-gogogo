@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "/data/uploads"
     # 共享密钥（空 = 不鉴权）
     SHARED_SECRET: str = ""
+    # football-data.org API Key（免费注册）
+    FOOTBALL_API_KEY: str = ""
     # 服务端口
     PORT: int = 8000
 
