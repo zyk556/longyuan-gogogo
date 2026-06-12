@@ -37,12 +37,18 @@ async def dashboard(
     recent_pl = pl_result.scalars().all()
 
     # 待开奖（已保存 + status=pending 的分析）
-    pending_result = await db.execute(
-        select(Analysis)
+    from sqlalchemy import func
+    subq = (
+        select(Analysis.id)
         .join(BetItem)
         .where(Analysis.saved == 1, BetItem.status == "pending")
-        .options(selectinload(Analysis.items))
         .distinct()
+        .scalar_subquery()
+    )
+    pending_result = await db.execute(
+        select(Analysis)
+        .where(Analysis.id.in_(subq))
+        .options(selectinload(Analysis.items))
         .order_by(Analysis.created_at.desc())
         .limit(10)
     )
