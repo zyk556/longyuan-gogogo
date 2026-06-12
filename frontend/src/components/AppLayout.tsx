@@ -6,7 +6,6 @@ import {
   CalendarOutlined,
   FileImageOutlined,
   AccountBookOutlined,
-  LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
 } from '@ant-design/icons'
@@ -33,11 +32,6 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token } = theme.useToken()
-
-  const handleLogout = () => {
-    localStorage.removeItem('api_key')
-    navigate('/login')
-  }
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -75,7 +69,6 @@ export default function AppLayout() {
             background: token.colorBgContainer,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
           }}
         >
           <Button
@@ -83,9 +76,6 @@ export default function AppLayout() {
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
           />
-          <Button icon={<LogoutOutlined />} onClick={handleLogout}>
-            退出
-          </Button>
         </Header>
         <Content style={{ margin: 24, padding: 24, background: token.colorBgContainer, borderRadius: 8 }}>
           <Outlet />

@@ -6,27 +6,12 @@ const api = axios.create({
   timeout: 60000,
 })
 
-// 请求拦截：注入鉴权密钥
-api.interceptors.request.use((config) => {
-  const key = localStorage.getItem('api_key')
-  if (key) {
-    config.headers['X-API-Key'] = key
-  }
-  return config
-})
-
 // 响应拦截：统一错误提示
 api.interceptors.response.use(
   (resp) => resp,
   (err) => {
     const msg = err.response?.data?.detail || err.message || '请求失败'
-    if (err.response?.status === 401) {
-      message.error('密钥无效，请重新登录')
-      localStorage.removeItem('api_key')
-      window.location.hash = '#/login'
-    } else {
-      message.error(msg)
-    }
+    message.error(msg)
     return Promise.reject(err)
   },
 )

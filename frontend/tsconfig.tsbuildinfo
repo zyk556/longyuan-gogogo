@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/main.tsx","./src/api/client.ts","./src/components/applayout.tsx","./src/components/profitchart.tsx","./src/pages/analysis.tsx","./src/pages/analysishistory.tsx","./src/pages/dashboard.tsx","./src/pages/matches.tsx","./src/pages/profitloss.tsx"],"version":"5.9.3"}
