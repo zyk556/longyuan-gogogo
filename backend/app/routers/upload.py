@@ -58,8 +58,13 @@ async def upload_image(
         db.add(image)
         await db.flush()
 
-    # 调用 MiMo 识别
-    ai_result = await recognize_lottery(file_path)
+    # 调用 MiMo 识别（失败不阻断上传）
+    try:
+        ai_result = await recognize_lottery(file_path)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).error("AI 识别异常: %s", e)
+        ai_result = None
 
     analysis_id = None
     if ai_result is not None:
