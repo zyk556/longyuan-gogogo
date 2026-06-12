@@ -30,6 +30,12 @@ const statusLabel: Record<string, string> = {
   void: '取消',
 }
 
+// 日期分隔线颜色
+const DATE_COLORS = [
+  '#1677ff', '#52c41a', '#fa8c16', '#eb2f96',
+  '#722ed1', '#13c2c2', '#f5222d', '#faad14',
+]
+
 export default function AnalysisHistory() {
   const [data, setData] = useState<Analysis[]>([])
   const [referencedIds, setReferencedIds] = useState<Set<string>>(new Set())
@@ -41,9 +47,16 @@ export default function AnalysisHistory() {
   const load = () => {
     setLoading(true)
     getAllAnalyses(1)
-      .then((r) => setData(r.data))
+      .then((r) => {
+        // 按投注日期排序
+        const sorted = [...r.data].sort((a, b) => {
+          const da = a.bet_date || ''
+          const db = b.bet_date || ''
+          return db.localeCompare(da)
+        })
+        setData(sorted)
+      })
       .finally(() => setLoading(false))
-    // 加载记账数据，找出已关联的分析 ID
     getProfitLoss().then((r) => {
       const ids = new Set<string>()
       r.data.forEach((pl) => {
@@ -72,6 +85,10 @@ export default function AnalysisHistory() {
     setDetailOpen(true)
   }
 
+  // 日期 → 颜色映射
+  const dateSet = [...new Set(data.map((d) => d.bet_date || '未知'))].sort().reverse()
+  const dateColorMap = new Map(dateSet.map((d, i) => [d, DATE_COLORS[i % DATE_COLORS.length]]))
+
   const columns: ColumnsType<Analysis> = [
     {
       title: '识别时间',
@@ -83,7 +100,14 @@ export default function AnalysisHistory() {
       title: '投注日期',
       dataIndex: 'bet_date',
       width: 120,
-      render: (v: string | null) => v || '-',
+      render: (v: string | null) => {
+        const color = dateColorMap.get(v || '未知') || '#999'
+        return (
+          <span style={{ borderLeft: `3px solid ${color}`, paddingLeft: 8 }}>
+            {v || '-'}
+          </span>
+        )
+      },
     },
     {
       title: '投注金额',
@@ -170,8 +194,28 @@ export default function AnalysisHistory() {
     },
   ]
 
+  // 判断是否需要加分隔线（日期变化时）
+  const getRowClassName = (_: any, index: number) => {
+    if (index === 0) return ''
+    const prevDate = data[index - 1]?.bet_date || ''
+    const currDate = data[index]?.bet_date || ''
+    if (prevDate !== currDate) return 'date-separator'
+    return ''
+  }
+
   return (
     <>
+      <style>{`
+        .date-separator td {
+          border-top: 2px solid #f0f0f0 !important;
+        }
+        .date-separator td:first-child {
+          border-top-color: transparent !important;
+        }
+        .date-separator td:nth-child(2) {
+          border-top-color: ${DATE_COLORS[0]} !important;
+        }
+      `}</style>
       <Card title="我的彩票">
         <Table
           rowKey="id"
@@ -180,6 +224,7 @@ export default function AnalysisHistory() {
           loading={loading}
           pagination={{ pageSize: 20 }}
           size="middle"
+          rowClassName={getRowClassName}
           locale={{ emptyText: <Empty description="暂无记录，去上传彩票吧" /> }}
         />
       </Card>
