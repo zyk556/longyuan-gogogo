@@ -16,7 +16,15 @@ const { Header, Sider, Content } = Layout
 const menuItems = [
   { key: '/', icon: <DashboardOutlined />, label: '首页' },
   { key: '/matches', icon: <CalendarOutlined />, label: '赛程' },
-  { key: '/analysis', icon: <FileImageOutlined />, label: '彩票分析' },
+  {
+    key: 'analysis',
+    icon: <FileImageOutlined />,
+    label: '彩票分析',
+    children: [
+      { key: '/analysis', label: '上传识别' },
+      { key: '/analysis/history', label: '我的彩票' },
+    ],
+  },
   { key: '/profit-loss', icon: <AccountBookOutlined />, label: '记账' },
 ]
 
@@ -50,11 +58,12 @@ export default function AppLayout() {
             color: token.colorPrimary,
           }}
         >
-          {collapsed ? '⚽' : '⚽ 世界杯工具'}
+          {collapsed ? '⚽' : '⚽ 龙苑集团'}
         </div>
         <Menu
           mode="inline"
           selectedKeys={[location.pathname]}
+          defaultOpenKeys={['analysis']}
           items={menuItems}
           onClick={({ key }) => navigate(key)}
         />

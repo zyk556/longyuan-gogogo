@@ -54,7 +54,7 @@ export default function Dashboard() {
         <Col xs={24} sm={8}>
           <Card hoverable onClick={() => navigate('/profit-loss')}>
             <Statistic
-              title="近7日盈亏"
+              title="总盈亏"
               value={totalPL}
               precision={2}
               prefix={<AccountBookOutlined />}
@@ -63,7 +63,7 @@ export default function Dashboard() {
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card hoverable onClick={() => navigate('/analysis')}>
+          <Card hoverable onClick={() => navigate('/analysis/history')}>
             <Statistic
               title="待开奖彩票"
               value={data.pending_analyses.length}
@@ -114,7 +114,7 @@ export default function Dashboard() {
           </Card>
         </Col>
         <Col xs={24} lg={10}>
-          <Card title="近7日盈亏走势">
+          <Card title="盈亏走势">
             {data.recent_pl.length === 0 ? (
               <Empty description="暂无记录" />
             ) : (

@@ -13,10 +13,23 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 SYSTEM_PROMPT = (
-    "你是一个体育彩票解析专家。请提取图片中所有彩票条目，返回JSON。"
-    '格式：{"bet_date":"YYYY-MM-DD","items":[{"match":"主队 vs 客队",'
-    '"bet_type":"胜平负","pick":"主胜","odds":2.10}],"total_stake":50.00,'
-    '"potential_return":128.50}'
+    "你是一个中国体育彩票（竞彩足球）解析专家。请仔细识别图片中所有投注条目，返回JSON。\n\n"
+    "支持的玩法类型包括：\n"
+    "- 胜平负/让球胜平负：pick 填 主胜/平局/客胜\n"
+    "- 比分：pick 填具体比分如 2:1、1:0 等\n"
+    "- 总进球数（大小球）：pick 填 大2.5/小2.5 等\n"
+    "- 半全场：pick 填 胜胜/胜负/平平 等\n"
+    "- 混合投注：多场比赛组合\n\n"
+    "返回格式：\n"
+    '{"bet_date":"YYYY-MM-DD","items":['
+    '{"match":"主队 vs 客队","bet_type":"玩法类型","pick":"投注选择","odds":2.10},'
+    '{"match":"主队 vs 客队","bet_type":"比分","pick":"2:1","odds":8.50}'
+    '],"total_stake":50.00,"potential_return":128.50}\n\n'
+    "注意：\n"
+    "- 比分玩法的 bet_type 填\"比分\"，pick 填比分如\"2:1\"\n"
+    "- odds 为数字，无法识别时填 null\n"
+    "- 如果某个字段看不清，尽量猜测，不要跳过该条目\n"
+    "- 总是返回有效 JSON，不要包含其他文字"
 )
 
 
@@ -28,6 +41,61 @@ def _file_to_base64_url(file_path: str) -> str:
     with open(file_path, "rb") as f:
         b64 = base64.b64encode(f.read()).decode()
     return f"data:{mime};base64,{b64}"
+
+
+def _normalize_result(raw: dict) -> dict:
+    """统一 MiMo 返回的各种格式为标准格式"""
+    # 如果已经是标准格式
+    if "items" in raw and isinstance(raw["items"], list):
+        return raw
+
+    items = []
+
+    # 格式2：中文字段名（已选比赛）
+    matches = raw.get("已选比赛") or raw.get("matches") or raw.get("选中比赛") or []
+    for m in matches:
+        match_desc = m.get("对阵") or m.get("match") or m.get("比赛") or ""
+        bet_type = m.get("玩法") or m.get("bet_type") or raw.get("投注详情", {}).get("玩法") or ""
+        pick = m.get("选择") or m.get("pick") or m.get("比分") or m.get("结果") or ""
+        odds = m.get("赔率") or m.get("odds") or None
+
+        # 比分玩法特殊处理
+        if pick and ":" in str(pick) and not bet_type:
+            bet_type = "比分"
+
+        items.append({
+            "match": match_desc,
+            "bet_type": str(bet_type),
+            "pick": str(pick),
+            "odds": float(odds) if odds else None,
+        })
+
+    # 格式3：单场投注
+    if not items and raw.get("对阵"):
+        items.append({
+            "match": raw["对阵"],
+            "bet_type": raw.get("玩法", ""),
+            "pick": raw.get("选择") or raw.get("比分", ""),
+            "odds": float(raw.get("赔率", 0) or 0),
+        })
+
+    # 提取金额
+    detail = raw.get("投注详情") or raw
+    total_stake = raw.get("total_stake") or detail.get("总金额") or detail.get("投注金额")
+    potential_return = raw.get("potential_return") or detail.get("预测奖金") or detail.get("预计奖金")
+
+    # 提取日期
+    bet_date = raw.get("bet_date") or raw.get("销售日期")
+    if not bet_date:
+        sales = raw.get("销售信息") or {}
+        bet_date = sales.get("销售日期")
+
+    return {
+        "bet_date": bet_date,
+        "items": items,
+        "total_stake": float(total_stake) if total_stake else None,
+        "potential_return": float(potential_return) if potential_return else None,
+    }
 
 
 async def recognize_lottery(file_path: str) -> Optional[dict]:
@@ -55,7 +123,7 @@ async def recognize_lottery(file_path: str) -> Optional[dict]:
             },
         ],
         "temperature": 0.1,
-        "max_completion_tokens": 2048,
+        "max_completion_tokens": 8192,
     }
 
     headers = {
@@ -69,13 +137,23 @@ async def recognize_lottery(file_path: str) -> Optional[dict]:
             resp.raise_for_status()
             data = resp.json()
 
-        content = data["choices"][0]["message"]["content"]
+        content = data["choices"][0]["message"].get("content") or ""
+        if not content.strip():
+            logger.warning("MiMo 返回空内容，原始响应: %s", str(data)[:500])
+            return None
         # 尝试从 markdown code block 或纯文本中提取 JSON
         if "```" in content:
-            content = content.split("```")[1]
+            parts = content.split("```")
+            content = parts[1] if len(parts) > 1 else parts[0]
             if content.startswith("json"):
                 content = content[4:]
+        # 提取第一个 JSON 对象
+        start = content.find("{")
+        end = content.rfind("}") + 1
+        if start >= 0 and end > start:
+            content = content[start:end]
         result = json.loads(content.strip())
+        result = _normalize_result(result)
         logger.info("MiMo 识别成功: %s", result.get("bet_date"))
         return result
     except Exception as e:

@@ -51,6 +51,7 @@ class Analysis(Base):
     total_stake = Column(Float, nullable=True)
     potential_return = Column(Float, nullable=True)
     raw_json = Column(JSON, nullable=True)
+    saved = Column(Integer, nullable=False, default=0)  # 0=未保存 1=已保存
     created_at = Column(DateTime, nullable=False, server_default=func.now())
 
     image = relationship("Image", back_populates="analyses")
@@ -76,7 +77,8 @@ class ProfitLoss(Base):
 
     id = Column(String(32), primary_key=True, default=gen_uuid)
     date = Column(Date, nullable=False, index=True)
-    amount = Column(Float, nullable=False)
-    note = Column(String(500), nullable=True)
+    stake = Column(Float, nullable=False, default=0)           # 投注金额
+    return_amount = Column(Float, nullable=False, default=0)   # 回报金额
+    amount = Column(Float, nullable=False, default=0)          # 盈亏 = 回报 - 投注
     related_analysis_id = Column(String(32), ForeignKey("analysis.id"), nullable=True)
     created_at = Column(DateTime, nullable=False, server_default=func.now())

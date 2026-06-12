@@ -183,7 +183,7 @@ export default function Analysis() {
           style={{ padding: '20px 0' }}
         >
           {uploading ? (
-            <Spin tip="AI 识别中..." />
+            <Spin><div style={{ padding: 40 }} /></Spin>
           ) : (
             <>
               <p className="ant-upload-drag-icon">
@@ -222,7 +222,7 @@ export default function Analysis() {
           }
         >
           <Table
-            rowKey={(_, idx) => String(idx)}
+            rowKey={(record) => (record as any).id || Math.random().toString()}
             columns={columns}
             dataSource={items}
             pagination={false}

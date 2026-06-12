@@ -1,5 +1,5 @@
 """彩票分析路由"""
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,13 +12,47 @@ from app.auth import verify_key
 router = APIRouter(prefix="/api/analysis", tags=["分析"])
 
 
+@router.get("", response_model=list[AnalysisOut])
+async def list_analyses(
+    saved: int = Query(None, description="1=仅已保存, 0=仅未保存, 不传=全部"),
+    db: AsyncSession = Depends(get_db),
+    _=Depends(verify_key),
+):
+    """获取分析记录列表"""
+    stmt = (
+        select(Analysis)
+        .options(selectinload(Analysis.items))
+        .order_by(Analysis.created_at.desc())
+    )
+    if saved is not None:
+        stmt = stmt.where(Analysis.saved == saved)
+    result = await db.execute(stmt)
+    return result.scalars().all()
+
+
+@router.delete("/{analysis_id}")
+async def delete_analysis(
+    analysis_id: str,
+    db: AsyncSession = Depends(get_db),
+    _=Depends(verify_key),
+):
+    """删除分析记录"""
+    result = await db.execute(select(Analysis).where(Analysis.id == analysis_id))
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="分析记录不存在")
+    await db.delete(analysis)
+    await db.commit()
+    return {"detail": "已删除"}
+
+
 @router.get("/{analysis_id}", response_model=AnalysisOut)
 async def get_analysis(
     analysis_id: str,
     db: AsyncSession = Depends(get_db),
     _=Depends(verify_key),
 ):
-    """获取分析结果（含 bet_items 列表）"""
+    """获取分析结果"""
     stmt = (
         select(Analysis)
         .where(Analysis.id == analysis_id)
@@ -38,7 +72,7 @@ async def update_items(
     db: AsyncSession = Depends(get_db),
     _=Depends(verify_key),
 ):
-    """更新修改后的条目明细（全量替换）"""
+    """保存修改后的条目明细（标记为已保存）"""
     stmt = (
         select(Analysis)
         .where(Analysis.id == analysis_id)
@@ -65,6 +99,8 @@ async def update_items(
         )
         db.add(new_item)
 
+    # 标记为已保存
+    analysis.saved = 1
     await db.commit()
 
     # 重新加载

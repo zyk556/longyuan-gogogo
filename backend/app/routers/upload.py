@@ -17,7 +17,6 @@ from app.auth import verify_key
 
 router = APIRouter(prefix="/api/upload", tags=["上传"])
 
-# 确保上传目录存在
 Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
 
@@ -28,38 +27,38 @@ async def upload_image(
     _=Depends(verify_key),
 ):
     """上传彩票图片 → 存储 → AI 识别 → 返回分析结果"""
-    # 读取文件内容
     content = await file.read()
     file_hash = hashlib.sha256(content).hexdigest()
 
-    # 图片去重
+    # 图片去重：已有且有分析结果 → 直接返回
     existing = await db.execute(select(Image).where(Image.file_hash == file_hash))
     existing_image = existing.scalar_one_or_none()
     if existing_image:
-        # 已存在 → 查找对应分析
         analysis_result = await db.execute(
             select(Analysis).where(Analysis.image_id == existing_image.id)
         )
         analysis = analysis_result.scalar_one_or_none()
-        return UploadOut(
-            image_id=existing_image.id,
-            url=f"/uploads/{Path(existing_image.file_path).name}",
-            analysis_id=analysis.id if analysis else None,
-        )
+        if analysis:
+            return UploadOut(
+                image_id=existing_image.id,
+                url=f"/uploads/{Path(existing_image.file_path).name}",
+                analysis_id=analysis.id,
+            )
+        # 没有分析结果 → 重新调用 AI
+        image = existing_image
+        file_path = existing_image.file_path
+    else:
+        # 新图片 → 保存文件
+        ext = Path(file.filename).suffix or ".jpg"
+        filename = f"{uuid.uuid4().hex}{ext}"
+        file_path = os.path.join(settings.UPLOAD_DIR, filename)
+        with open(file_path, "wb") as f:
+            f.write(content)
+        image = Image(file_path=file_path, file_hash=file_hash)
+        db.add(image)
+        await db.flush()
 
-    # 保存文件
-    ext = Path(file.filename).suffix or ".jpg"
-    filename = f"{uuid.uuid4().hex}{ext}"
-    file_path = os.path.join(settings.UPLOAD_DIR, filename)
-    with open(file_path, "wb") as f:
-        f.write(content)
-
-    # 写入 images 表
-    image = Image(file_path=file_path, file_hash=file_hash)
-    db.add(image)
-    await db.flush()
-
-    # 调用 MiMo 识别（传入本地文件路径，服务内部转 Base64）
+    # 调用 MiMo 识别
     ai_result = await recognize_lottery(file_path)
 
     analysis_id = None
@@ -88,7 +87,7 @@ async def upload_image(
                 match_desc=item.get("match", ""),
                 bet_type=item.get("bet_type", ""),
                 pick=item.get("pick", ""),
-                odds=float(item.get("odds", 0)),
+                odds=float(item.get("odds") or 0),
             )
             db.add(bet_item)
 
@@ -98,6 +97,6 @@ async def upload_image(
 
     return UploadOut(
         image_id=image.id,
-        url=f"/uploads/{filename}",
+        url=f"/uploads/{Path(image.file_path).name}",
         analysis_id=analysis_id,
     )

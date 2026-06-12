@@ -70,8 +70,9 @@ export interface Analysis {
 export interface ProfitLoss {
   id: string
   date: string
+  stake: number
+  return_amount: number
   amount: number
-  note: string | null
   related_analysis_id: string | null
   created_at: string
 }
@@ -97,13 +98,18 @@ export const uploadImage = (file: File) => {
 
 export const getAnalysis = (id: string) => api.get<Analysis>(`/analysis/${id}`)
 
+export const getAllAnalyses = (saved?: number) =>
+  api.get<Analysis[]>('/analysis', { params: saved !== undefined ? { saved } : {} })
+
+export const deleteAnalysis = (id: string) => api.delete(`/analysis/${id}`)
+
 export const updateAnalysisItems = (id: string, items: Partial<BetItem>[]) =>
   api.put<Analysis>(`/analysis/${id}/items`, { items })
 
 export const createProfitLoss = (data: {
   date: string
-  amount: number
-  note?: string
+  stake?: number
+  return_amount?: number
   related_analysis_id?: string
 }) => api.post<ProfitLoss>('/profit-loss', data)
 
@@ -112,7 +118,7 @@ export const getProfitLoss = (start?: string, end?: string) =>
 
 export const updateProfitLoss = (
   id: string,
-  data: Partial<{ date: string; amount: number; note: string }>,
+  data: Partial<{ date: string; stake: number; return_amount: number; related_analysis_id: string }>,
 ) => api.put<ProfitLoss>(`/profit-loss/${id}`, data)
 
 export const deleteProfitLoss = (id: string) =>

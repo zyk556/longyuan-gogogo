@@ -30,20 +30,17 @@ async def dashboard(
     )
     today_matches = matches_result.scalars().all()
 
-    # 最近 7 天盈亏
-    week_ago = today - timedelta(days=7)
+    # 总盈亏
     pl_result = await db.execute(
-        select(ProfitLoss)
-        .where(ProfitLoss.date >= week_ago)
-        .order_by(ProfitLoss.date.desc())
+        select(ProfitLoss).order_by(ProfitLoss.date.desc())
     )
     recent_pl = pl_result.scalars().all()
 
-    # 待开奖（status=pending 的分析）
+    # 待开奖（已保存 + status=pending 的分析）
     pending_result = await db.execute(
         select(Analysis)
         .join(BetItem)
-        .where(BetItem.status == "pending")
+        .where(Analysis.saved == 1, BetItem.status == "pending")
         .options(selectinload(Analysis.items))
         .distinct()
         .order_by(Analysis.created_at.desc())

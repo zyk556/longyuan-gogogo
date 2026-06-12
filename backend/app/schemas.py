@@ -60,6 +60,7 @@ class AnalysisOut(BaseModel):
     total_stake: Optional[float] = None
     potential_return: Optional[float] = None
     raw_json: Optional[dict] = None
+    saved: int = 0
     created_at: datetime
     items: list[BetItemOut] = []
 
@@ -69,22 +70,24 @@ class AnalysisOut(BaseModel):
 # ── ProfitLoss ──────────────────────────────────────────
 class ProfitLossCreate(BaseModel):
     date: date
-    amount: float
-    note: Optional[str] = None
+    stake: float = 0
+    return_amount: float = 0
     related_analysis_id: Optional[str] = None
 
 
 class ProfitLossUpdate(BaseModel):
     date: Optional[date] = None
-    amount: Optional[float] = None
-    note: Optional[str] = None
+    stake: Optional[float] = None
+    return_amount: Optional[float] = None
+    related_analysis_id: Optional[str] = None
 
 
 class ProfitLossOut(BaseModel):
     id: str
     date: date
+    stake: float
+    return_amount: float
     amount: float
-    note: Optional[str] = None
     related_analysis_id: Optional[str] = None
     created_at: datetime
 

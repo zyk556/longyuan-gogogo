@@ -21,7 +21,13 @@ async def create_pl(
     _=Depends(verify_key),
 ):
     """添加盈亏记录"""
-    pl = ProfitLoss(**body.model_dump())
+    pl = ProfitLoss(
+        date=body.date,
+        stake=body.stake,
+        return_amount=body.return_amount,
+        amount=body.return_amount - body.stake,
+        related_analysis_id=body.related_analysis_id,
+    )
     db.add(pl)
     await db.commit()
     await db.refresh(pl)
@@ -35,7 +41,7 @@ async def list_pl(
     db: AsyncSession = Depends(get_db),
     _=Depends(verify_key),
 ):
-    """查询盈亏列表，支持日期范围筛选"""
+    """查询盈亏列表"""
     stmt = select(ProfitLoss).order_by(ProfitLoss.date.desc())
     if start:
         stmt = stmt.where(ProfitLoss.date >= start)
@@ -57,8 +63,16 @@ async def update_pl(
     pl = result.scalar_one_or_none()
     if not pl:
         raise HTTPException(status_code=404, detail="记录不存在")
-    for field, value in body.model_dump(exclude_unset=True).items():
-        setattr(pl, field, value)
+    data = body.model_dump(exclude_unset=True)
+    if "stake" in data:
+        pl.stake = data["stake"]
+    if "return_amount" in data:
+        pl.return_amount = data["return_amount"]
+    if "date" in data:
+        pl.date = data["date"]
+    if "related_analysis_id" in data:
+        pl.related_analysis_id = data["related_analysis_id"]
+    pl.amount = pl.return_amount - pl.stake
     await db.commit()
     await db.refresh(pl)
     return pl
