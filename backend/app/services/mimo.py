@@ -105,8 +105,9 @@ async def recognize_lottery(file_path: str) -> Optional[dict]:
     返回解析后的 JSON dict，失败时返回 None。
     """
     if not settings.MIMO_API_KEY:
-        logger.warning("MIMO_API_KEY 未配置，跳过 AI 识别")
+        logger.error("MIMO_API_KEY 未配置！请在环境变量中设置")
         return None
+    logger.info("开始识别图片: %s (key=%s...)", file_path, settings.MIMO_API_KEY[:8])
 
     image_url = _file_to_base64_url(file_path)
 
@@ -123,7 +124,7 @@ async def recognize_lottery(file_path: str) -> Optional[dict]:
             },
         ],
         "temperature": 0.1,
-        "max_completion_tokens": 8192,
+        "max_completion_tokens": 16384,
     }
 
     headers = {
@@ -138,8 +139,11 @@ async def recognize_lottery(file_path: str) -> Optional[dict]:
             data = resp.json()
 
         content = data["choices"][0]["message"].get("content") or ""
+        reasoning = data["choices"][0]["message"].get("reasoning_content") or ""
+        finish = data["choices"][0].get("finish_reason", "unknown")
+        logger.info("MiMo 响应: finish=%s content_len=%d reasoning_len=%d", finish, len(content), len(reasoning))
         if not content.strip():
-            logger.warning("MiMo 返回空内容，原始响应: %s", str(data)[:500])
+            logger.warning("MiMo 返回空内容! finish_reason=%s reasoning=%s", finish, reasoning[:200])
             return None
         # 尝试从 markdown code block 或纯文本中提取 JSON
         if "```" in content:
