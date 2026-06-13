@@ -39,9 +39,9 @@ export default function ProfitChart({ data }: Props) {
         <Tooltip formatter={(v: number, name: string) => [`¥${v.toFixed(2)}`, name]} />
         <Legend />
         <ReferenceLine y={0} stroke="#999" />
-        <Line type="monotone" dataKey="投入" stroke="#fa8c16" strokeWidth={2} dot={{ r: 3 }} />
-        <Line type="monotone" dataKey="回报" stroke="#52c41a" strokeWidth={2} dot={{ r: 3 }} />
-        <Line type="monotone" dataKey="净盈亏" stroke="#1677ff" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+        <Line type="monotone" dataKey="投入" stroke="#fa8c16" strokeWidth={1.5} strokeDasharray="6 3" dot={{ r: 2 }} />
+        <Line type="monotone" dataKey="回报" stroke="#52c41a" strokeWidth={1.5} strokeDasharray="3 3" dot={{ r: 2 }} />
+        <Line type="monotone" dataKey="净盈亏" stroke="#1677ff" strokeWidth={3} dot={{ r: 4, fill: '#1677ff' }} activeDot={{ r: 7 }} />
       </LineChart>
     </ResponsiveContainer>
   )
