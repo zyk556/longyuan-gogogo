@@ -131,11 +131,13 @@ export default function AnalysisHistory() {
       width: 100,
       render: (_, r) => {
         const statuses = r.items.map((i) => i.status)
-        if (statuses.length > 0 && statuses.every((s) => s === 'won'))
-          return <Tag color="success">已中奖</Tag>
+        if (statuses.some((s) => s === 'lost'))
+          return <Tag color="error">未中奖</Tag>
         if (statuses.some((s) => s === 'pending'))
           return <Tag color="processing">待开奖</Tag>
-        return <Tag color="error">未中奖</Tag>
+        if (statuses.length > 0 && statuses.every((s) => s === 'won'))
+          return <Tag color="success">已中奖</Tag>
+        return <Tag>未知</Tag>
       },
     },
     {
