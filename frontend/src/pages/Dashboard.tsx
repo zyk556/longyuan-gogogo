@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { Row, Col, Card, Statistic, Tag, Empty, Spin, List, Button } from 'antd'
 import {
   CalendarOutlined,
@@ -26,6 +26,7 @@ export default function Dashboard() {
   const [data, setData] = useState<DashT | null>(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+  const { internal } = useOutletContext<{ internal: boolean }>()
 
   useEffect(() => {
     getDashboard()
@@ -76,7 +77,7 @@ export default function Dashboard() {
 
       <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
         <Col xs={24} lg={14}>
-          <Card title="今日赛程" extra={<Button icon={<UploadOutlined />} onClick={() => navigate('/analysis')}>上传彩票</Button>}>
+          <Card title="今日赛程" extra={internal ? <Button icon={<UploadOutlined />} onClick={() => navigate('/analysis')}>上传彩票</Button> : null}>
             {data.today_matches.length === 0 ? (
               <Empty description="今日无比赛" />
             ) : (

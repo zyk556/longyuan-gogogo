@@ -6,6 +6,15 @@ const api = axios.create({
   timeout: 60000,
 })
 
+// 请求拦截：注入 token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token')
+  if (token) {
+    config.headers['X-Auth-Token'] = token
+  }
+  return config
+})
+
 // 响应拦截：统一错误提示
 api.interceptors.response.use(
   (resp) => resp,
@@ -15,6 +24,13 @@ api.interceptors.response.use(
     return Promise.reject(err)
   },
 )
+
+// 登录
+export const login = (password: string) =>
+  api.post<{ success: boolean; token: string }>('/login', { password })
+
+// 是否内部模式
+export const isInternal = () => !!localStorage.getItem('auth_token')
 
 export default api
 

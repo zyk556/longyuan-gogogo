@@ -59,6 +59,16 @@ async def health():
     return JSONResponse(content={"status": "ok"})
 
 
+@app.post("/api/login")
+async def login(body: dict):
+    """验证密码，返回 token"""
+    from app.auth import INTERNAL_PASSWORD, _make_token
+    password = body.get("password", "")
+    if password == INTERNAL_PASSWORD:
+        return {"success": True, "token": _make_token(password)}
+    return JSONResponse(status_code=401, content={"success": False, "detail": "密码错误"})
+
+
 # 前端静态文件
 if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
     assets_dir = FRONTEND_DIR / "assets"

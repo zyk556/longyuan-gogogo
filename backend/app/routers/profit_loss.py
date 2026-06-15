@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import ProfitLoss
 from app.schemas import ProfitLossCreate, ProfitLossUpdate, ProfitLossOut
-from app.auth import verify_key
+from app.auth import verify_key, verify_internal
 
 router = APIRouter(prefix="/api/profit-loss", tags=["记账"])
 
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/profit-loss", tags=["记账"])
 async def create_pl(
     body: ProfitLossCreate,
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
+    _=Depends(verify_internal),
 ):
     """添加盈亏记录"""
     pl = ProfitLoss(
@@ -56,7 +56,7 @@ async def update_pl(
     pl_id: str,
     body: ProfitLossUpdate,
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
+    _=Depends(verify_internal),
 ):
     """修改盈亏记录"""
     result = await db.execute(select(ProfitLoss).where(ProfitLoss.id == pl_id))
@@ -82,7 +82,7 @@ async def update_pl(
 async def delete_pl(
     pl_id: str,
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
+    _=Depends(verify_internal),
 ):
     """删除盈亏记录"""
     result = await db.execute(select(ProfitLoss).where(ProfitLoss.id == pl_id))

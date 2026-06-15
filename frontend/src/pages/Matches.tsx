@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import { Card, DatePicker, Table, Tag, Empty, Button, message, Space } from 'antd'
 import { SyncOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -25,6 +26,7 @@ export default function Matches() {
   const [data, setData] = useState<Match[]>([])
   const [loading, setLoading] = useState(false)
   const [syncing, setSyncing] = useState(false)
+  const { internal } = useOutletContext<{ internal: boolean }>()
 
   const load = (d: Dayjs) => {
     setLoading(true)
@@ -102,13 +104,15 @@ export default function Matches() {
               }
             }}
           />
-          <Button
-            icon={<SyncOutlined spin={syncing} />}
-            loading={syncing}
-            onClick={handleSync}
-          >
-            同步比分
-          </Button>
+          {internal && (
+            <Button
+              icon={<SyncOutlined spin={syncing} />}
+              loading={syncing}
+              onClick={handleSync}
+            >
+              同步比分
+            </Button>
+          )}
         </Space>
       }
     >

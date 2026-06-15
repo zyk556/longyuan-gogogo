@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import Match
 from app.services.football_api import fetch_worldcup_matches
-from app.auth import verify_key
+from app.auth import verify_internal
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/sync", tags=["同步"])
@@ -35,7 +35,7 @@ async def _do_sync(db: AsyncSession) -> dict:
 @router.post("")
 async def sync_matches(
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
+    _=Depends(verify_internal),
 ):
     """手动触发同步"""
     return await _do_sync(db)
@@ -44,7 +44,7 @@ async def sync_matches(
 @router.post("/background")
 async def sync_matches_background(
     background_tasks: BackgroundTasks,
-    _=Depends(verify_key),
+    _=Depends(verify_internal),
 ):
     """后台异步同步"""
     background_tasks.add_task(_run_background_sync)

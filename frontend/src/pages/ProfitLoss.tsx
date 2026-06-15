@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import {
   Card,
   Table,
@@ -46,6 +47,7 @@ export default function ProfitLossPage() {
     dayjs(),
   ])
   const [form] = Form.useForm()
+  const { internal } = useOutletContext<{ internal: boolean }>()
 
   const load = () => {
     setLoading(true)
@@ -170,12 +172,16 @@ export default function ProfitLossPage() {
           <Button type="link" icon={<EyeOutlined />} onClick={() => showDetail(record)}>
             详情
           </Button>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)}>
-            编辑
-          </Button>
-          <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          {internal && (
+            <>
+              <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)}>
+                编辑
+              </Button>
+              <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>
+                <Button type="link" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
+            </>
+          )}
         </Space>
       ),
     },
@@ -233,9 +239,11 @@ export default function ProfitLossPage() {
               }}
             />
             <Button onClick={load}>查询</Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-              新增
-            </Button>
+            {internal && (
+              <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
+                新增
+              </Button>
+            )}
           </Space>
         }
       >

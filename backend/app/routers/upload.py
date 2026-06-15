@@ -13,7 +13,7 @@ from app.database import get_db
 from app.models import Image, Analysis, BetItem
 from app.schemas import UploadOut
 from app.services.mimo import recognize_lottery
-from app.auth import verify_key
+from app.auth import verify_internal
 
 router = APIRouter(prefix="/api/upload", tags=["上传"])
 
@@ -24,7 +24,7 @@ Path(settings.UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 async def upload_image(
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
+    _=Depends(verify_internal),
 ):
     """上传彩票图片 → 存储 → AI 识别 → 返回分析结果"""
     content = await file.read()

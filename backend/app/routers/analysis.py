@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Analysis, BetItem
 from app.schemas import AnalysisOut, BetItemsUpdateReq
-from app.auth import verify_key
+from app.auth import verify_key, verify_internal
 
 router = APIRouter(prefix="/api/analysis", tags=["分析"])
 
@@ -38,7 +38,7 @@ async def list_analyses(
 async def delete_analysis(
     analysis_id: str,
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
+    _=Depends(verify_internal),
 ):
     """删除分析记录"""
     result = await db.execute(select(Analysis).where(Analysis.id == analysis_id))
@@ -78,7 +78,7 @@ async def update_analysis(
     analysis_id: str,
     body: BetDateUpdate,
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
+    _=Depends(verify_internal),
 ):
     """更新分析记录（投注日期等）"""
     result = await db.execute(select(Analysis).where(Analysis.id == analysis_id))
@@ -98,7 +98,7 @@ async def update_items(
     analysis_id: str,
     body: BetItemsUpdateReq,
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
+    _=Depends(verify_internal),
 ):
     """保存修改后的条目明细（标记为已保存）"""
     stmt = (

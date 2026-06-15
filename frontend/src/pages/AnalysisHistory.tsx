@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import {
   Card,
   Table,
@@ -43,6 +43,7 @@ export default function AnalysisHistory() {
   const [detailOpen, setDetailOpen] = useState(false)
   const [current, setCurrent] = useState<Analysis | null>(null)
   const navigate = useNavigate()
+  const { internal } = useOutletContext<{ internal: boolean }>()
 
   const load = () => {
     setLoading(true)
@@ -164,15 +165,19 @@ export default function AnalysisHistory() {
           >
             详情
           </Button>
-          <Button
-            type="link"
-            onClick={() => navigate(`/analysis/${record.id}`)}
-          >
-            编辑
-          </Button>
-          <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
+          {internal && (
+            <>
+              <Button
+                type="link"
+                onClick={() => navigate(`/analysis/${record.id}`)}
+              >
+                编辑
+              </Button>
+              <Popconfirm title="确认删除？" onConfirm={() => handleDelete(record.id)}>
+                <Button type="link" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
+            </>
+          )}
         </Space>
       ),
     },
