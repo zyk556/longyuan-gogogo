@@ -92,6 +92,12 @@ def _normalize_result(raw: dict) -> dict:
     if not bet_date:
         sales = raw.get("销售信息") or {}
         bet_date = sales.get("销售日期")
+    # 修正年份（AI 常把 2026 识别成 2024/2025）
+    if bet_date and isinstance(bet_date, str):
+        for wrong, right in [("2024", "2026"), ("2025", "2026")]:
+            if bet_date.startswith(wrong):
+                bet_date = right + bet_date[4:]
+                break
 
     return {
         "bet_date": bet_date,
