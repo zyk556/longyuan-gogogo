@@ -52,7 +52,9 @@ export default function AnalysisHistory() {
         const sorted = [...r.data].sort((a, b) => {
           const da = a.bet_date || ''
           const db = b.bet_date || ''
-          return db.localeCompare(da)
+          if (da !== db) return db.localeCompare(da)
+          // 同一天按创建时间倒序
+          return (b.created_at || '').localeCompare(a.created_at || '')
         })
         setData(sorted)
       })
