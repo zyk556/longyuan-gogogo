@@ -24,10 +24,12 @@ SYSTEM_PROMPT = (
     "返回格式：\n"
     '{"bet_date":"YYYY-MM-DD","items":['
     '{"match":"主队 vs 客队","bet_type":"玩法类型","pick":"投注选择","odds":2.10},'
+    '{"match":"荷兰-1 vs 日本+2","bet_type":"让球胜平负","pick":"主胜","odds":1.85},'
     '{"match":"主队 vs 客队","bet_type":"比分","pick":"2:1","odds":8.50}'
     '],"total_stake":50.00,"potential_return":128.50}\n\n'
-    "注意：\n"
-    "- 比分玩法的 bet_type 填\"比分\"，pick 填比分如\"2:1\"\n"
+    "重要规则：\n"
+    "- 让球胜平负：match 字段必须包含让球数！格式如 \"荷兰-1 vs 日本+2\"、\"巴西-0.5 vs 阿根廷+0.5\"\n"
+    "- 比分玩法：bet_type 填\"比分\"，pick 填比分如\"2:1\"\n"
     "- odds 为数字，无法识别时填 null\n"
     "- 如果某个字段看不清，尽量猜测，不要跳过该条目\n"
     "- 总是返回有效 JSON，不要包含其他文字"
