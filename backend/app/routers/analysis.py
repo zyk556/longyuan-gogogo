@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Analysis, BetItem
 from app.schemas import AnalysisOut, BetItemsUpdateReq
-from app.auth import verify_key, verify_internal
+from app.auth import verify_internal
 
 router = APIRouter(prefix="/api/analysis", tags=["分析"])
 
@@ -20,7 +20,6 @@ router = APIRouter(prefix="/api/analysis", tags=["分析"])
 async def list_analyses(
     saved: int = Query(None, description="1=仅已保存, 0=仅未保存, 不传=全部"),
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
 ):
     """获取分析记录列表"""
     stmt = (
@@ -54,7 +53,6 @@ async def delete_analysis(
 async def get_analysis(
     analysis_id: str,
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
 ):
     """获取分析结果"""
     stmt = (

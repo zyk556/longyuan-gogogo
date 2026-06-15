@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import ProfitLoss
 from app.schemas import ProfitLossCreate, ProfitLossUpdate, ProfitLossOut
-from app.auth import verify_key, verify_internal
+from app.auth import verify_internal
 
 router = APIRouter(prefix="/api/profit-loss", tags=["记账"])
 
@@ -39,7 +39,6 @@ async def list_pl(
     start: Optional[date] = Query(None),
     end: Optional[date] = Query(None),
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
 ):
     """查询盈亏列表"""
     stmt = select(ProfitLoss).order_by(ProfitLoss.date.desc())

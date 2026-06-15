@@ -9,7 +9,6 @@ from sqlalchemy.orm import selectinload
 from app.database import get_db
 from app.models import Match, ProfitLoss, Analysis, BetItem
 from app.schemas import DashboardOut, MatchOut, ProfitLossOut, AnalysisOut
-from app.auth import verify_key
 
 router = APIRouter(prefix="/api/dashboard", tags=["首页"])
 
@@ -17,7 +16,6 @@ router = APIRouter(prefix="/api/dashboard", tags=["首页"])
 @router.get("", response_model=DashboardOut)
 async def dashboard(
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
 ):
     """首页聚合：今日比赛 + 最近盈亏 + 待开奖彩票"""
     today = date.today()

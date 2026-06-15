@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import Match
 from app.schemas import MatchOut
-from app.auth import verify_key
+from app.auth import check_auth
 
 router = APIRouter(prefix="/api/matches", tags=["赛程"])
 
@@ -18,7 +18,6 @@ router = APIRouter(prefix="/api/matches", tags=["赛程"])
 async def list_matches(
     date_: Optional[date] = Query(None, alias="date"),
     db: AsyncSession = Depends(get_db),
-    _=Depends(verify_key),
 ):
     """获取赛程列表，可按日期筛选"""
     stmt = select(Match).order_by(Match.match_date, Match.kickoff_time)
