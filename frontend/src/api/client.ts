@@ -83,6 +83,9 @@ export const uploadImage = (file: File) => {
 
 export const getAnalysis = (id: string) => api.get<Analysis>(`/analysis/${id}`)
 
+export const updateAnalysis = (id: string, data: { bet_date?: string }) =>
+  api.put<Analysis>(`/analysis/${id}`, data)
+
 export const getAllAnalyses = (saved?: number) =>
   api.get<Analysis[]>('/analysis', { params: saved !== undefined ? { saved } : {} })
 

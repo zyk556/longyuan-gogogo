@@ -10,15 +10,16 @@ import {
   Select,
   Image,
   Space,
+  DatePicker,
   message,
   Spin,
   Empty,
   Popconfirm,
 } from 'antd'
 import { InboxOutlined, SaveOutlined, PlusOutlined, DeleteOutlined } from '@ant-design/icons'
-import type { UploadFile } from 'antd/es/upload/interface'
 import type { ColumnsType } from 'antd/es/table'
-import { uploadImage, getAnalysis, updateAnalysisItems, Analysis as AnalysisT, BetItem } from '../api/client'
+import dayjs from 'dayjs'
+import { uploadImage, getAnalysis, updateAnalysis, updateAnalysisItems, Analysis as AnalysisT, BetItem } from '../api/client'
 
 const { Dragger } = Upload
 
@@ -35,15 +36,16 @@ export default function Analysis() {
   const [imageUrl, setImageUrl] = useState<string>('')
   const [analysis, setAnalysis] = useState<AnalysisT | null>(null)
   const [items, setItems] = useState<Partial<BetItem>[]>([])
+  const [betDate, setBetDate] = useState<dayjs.Dayjs | null>(null)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
 
-  // 加载已有分析
   useEffect(() => {
     if (routeId) {
       getAnalysis(routeId).then((r) => {
         setAnalysis(r.data)
         setItems(r.data.items)
+        setBetDate(r.data.bet_date ? dayjs(r.data.bet_date) : null)
         setImageUrl('')
       })
     }
@@ -59,6 +61,7 @@ export default function Analysis() {
         const aRes = await getAnalysis(analysis_id)
         setAnalysis(aRes.data)
         setItems(aRes.data.items)
+        setBetDate(aRes.data.bet_date ? dayjs(aRes.data.bet_date) : null)
         navigate(`/analysis/${analysis_id}`, { replace: true })
         message.success('识别完成')
       } else {
@@ -69,13 +72,18 @@ export default function Analysis() {
     } finally {
       setUploading(false)
     }
-    return false // 阻止 antd 自动上传
+    return false
   }
 
   const handleSave = async () => {
     if (!analysis) return
     setSaving(true)
     try {
+      // 保存投注日期
+      await updateAnalysis(analysis.id, {
+        bet_date: betDate ? betDate.format('YYYY-MM-DD') : undefined,
+      })
+      // 保存条目
       const res = await updateAnalysisItems(
         analysis.id,
         items.map((i) => ({
@@ -203,7 +211,17 @@ export default function Analysis() {
 
       {analysis ? (
         <Card
-          title="识别结果（可编辑）"
+          title={
+            <Space>
+              <span>识别结果（可编辑）</span>
+              <DatePicker
+                value={betDate}
+                onChange={(d) => setBetDate(d)}
+                placeholder="投注日期"
+                size="small"
+              />
+            </Space>
+          }
           extra={
             <Space>
               {analysis.total_stake != null && (
@@ -222,7 +240,7 @@ export default function Analysis() {
           }
         >
           <Table
-            rowKey={(record) => (record as any).id || Math.random().toString()}
+            rowKey={(_, idx) => String(idx)}
             columns={columns}
             dataSource={items}
             pagination={false}

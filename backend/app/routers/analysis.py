@@ -1,5 +1,9 @@
 """彩票分析路由"""
+from datetime import date
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -63,6 +67,30 @@ async def get_analysis(
     if not analysis:
         raise HTTPException(status_code=404, detail="分析记录不存在")
     return analysis
+
+
+class BetDateUpdate(BaseModel):
+    bet_date: Optional[date] = None
+
+
+@router.put("/{analysis_id}", response_model=AnalysisOut)
+async def update_analysis(
+    analysis_id: str,
+    body: BetDateUpdate,
+    db: AsyncSession = Depends(get_db),
+    _=Depends(verify_key),
+):
+    """更新分析记录（投注日期等）"""
+    result = await db.execute(select(Analysis).where(Analysis.id == analysis_id))
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="分析记录不存在")
+    if body.bet_date is not None:
+        analysis.bet_date = body.bet_date
+    await db.commit()
+    stmt = select(Analysis).where(Analysis.id == analysis_id).options(selectinload(Analysis.items))
+    result = await db.execute(stmt)
+    return result.scalar_one()
 
 
 @router.put("/{analysis_id}/items", response_model=AnalysisOut)
