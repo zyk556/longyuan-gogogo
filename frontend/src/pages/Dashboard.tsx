@@ -66,7 +66,7 @@ export default function Dashboard() {
         <Col xs={24} sm={8}>
           <Card hoverable onClick={() => navigate('/analysis/history')}>
             <Statistic
-              title="待开奖彩票"
+              title="我的彩票"
               value={data.pending_analyses.length}
               prefix={<FileImageOutlined />}
               suffix="张"

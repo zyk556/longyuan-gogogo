@@ -1,5 +1,5 @@
 """首页聚合路由"""
-from datetime import date, timedelta
+from datetime import date
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
@@ -8,16 +8,17 @@ from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import Match, ProfitLoss, Analysis, BetItem
-from app.schemas import DashboardOut, MatchOut, ProfitLossOut, AnalysisOut
 
 router = APIRouter(prefix="/api/dashboard", tags=["首页"])
 
+START_DATE = date(2026, 6, 10)
 
-@router.get("", response_model=DashboardOut)
+
+@router.get("")
 async def dashboard(
     db: AsyncSession = Depends(get_db),
 ):
-    """首页聚合：今日比赛 + 最近盈亏 + 待开奖彩票"""
+    """首页聚合：今日比赛 + 总盈亏（6.10起）+ 我的彩票总数"""
     today = date.today()
 
     # 今日比赛
@@ -28,32 +29,25 @@ async def dashboard(
     )
     today_matches = matches_result.scalars().all()
 
-    # 总盈亏
+    # 总盈亏（6.10 起）
     pl_result = await db.execute(
-        select(ProfitLoss).order_by(ProfitLoss.date.desc())
+        select(ProfitLoss)
+        .where(ProfitLoss.date >= START_DATE)
+        .order_by(ProfitLoss.date.desc())
     )
     recent_pl = pl_result.scalars().all()
 
-    # 待开奖（已保存 + status=pending 的分析）
-    from sqlalchemy import func
-    subq = (
-        select(Analysis.id)
-        .join(BetItem)
-        .where(Analysis.saved == 1, BetItem.status == "pending")
-        .distinct()
-        .scalar_subquery()
-    )
-    pending_result = await db.execute(
+    # 我的彩票（已保存的全部）
+    analyses_result = await db.execute(
         select(Analysis)
-        .where(Analysis.id.in_(subq))
+        .where(Analysis.saved == 1)
         .options(selectinload(Analysis.items))
         .order_by(Analysis.created_at.desc())
-        .limit(10)
     )
-    pending_analyses = pending_result.scalars().all()
+    pending_analyses = analyses_result.scalars().all()
 
-    return DashboardOut(
-        today_matches=today_matches,
-        recent_pl=recent_pl,
-        pending_analyses=pending_analyses,
-    )
+    return {
+        "today_matches": today_matches,
+        "recent_pl": recent_pl,
+        "pending_analyses": pending_analyses,
+    }

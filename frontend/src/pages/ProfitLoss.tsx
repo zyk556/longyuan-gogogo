@@ -43,7 +43,7 @@ export default function ProfitLossPage() {
   const [currentPL, setCurrentPL] = useState<ProfitLoss | null>(null)
   const [savedAnalyses, setSavedAnalyses] = useState<Analysis[]>([])
   const [range, setRange] = useState<[Dayjs, Dayjs]>([
-    dayjs().subtract(7, 'day'),
+    dayjs('2026-06-10'),
     dayjs(),
   ])
   const [form] = Form.useForm()
